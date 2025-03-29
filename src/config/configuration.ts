@@ -4,6 +4,11 @@ export const envConfiguration = (): envT => ({
   NODE_ENV: process.env.NODE_ENV as string,
   PORT: Number(process.env.PORT as string),
   APPLICATION_NAME: process.env.APPLICATION_NAME as string,
+  // JWT config
+  JWT_SECRET_KEY: process.env.JWT_SECRET_KEY as string,
+  JWT_EXPIRATION_TIME: process.env.JWT_EXPIRATION_TIME as string,
+  JWT_REFRESH_SECRET_KEY: process.env.JWT_REFRESH_SECRET_KEY as string,
+  JWT_REFRESH_EXPIRATION_TIME: process.env.JWT_REFRESH_EXPIRATION_TIME as string,
   // Postgres config
   POSTGRES_HOST: process.env.POSTGRES_HOST as string,
   POSTGRES_PORT: Number(process.env.POSTGRES_PORT as string),

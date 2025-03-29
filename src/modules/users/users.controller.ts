@@ -5,72 +5,70 @@ import {
   Get,
   HttpCode,
   NotFoundException,
+  Param,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { ApiConfigService } from 'src/shared/services/api-config.service';
-import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { RedisCacheService } from 'src/shared/services/redis-cache.service';
-import { EmailService } from 'src/queues/email/email.service';
+import { AccessTokenGuard } from 'src/guards/accessToken.guard';
+import { Roles } from 'src/decorators/roles.decorator';
+import { UserRole } from 'src/types/user.types';
+import { getUserByEmailDto } from './dto/get-users';
 
 @Controller('users')
 export class UsersController {
   // inject the users service
   constructor(
     private readonly usersService: UsersService,
-    private readonly configService: ApiConfigService,
     private readonly cacheService: RedisCacheService,
-    private readonly emailService: EmailService,
   ) {}
-
-  // Get all the users
-  @Get('/')
-  @HttpCode(200)
-  async get() {
-    let users = await this.cacheService.get('all-users');
-    if (!users) {
-      console.log('fetching from db');
-      users = await this.usersService.get();
-      await this.cacheService.set('all-users', users);
-    }
-    return { users: users };
-  }
-
   // Get single user by id
-  @Get('/')
+  @Get('/:id')
   @HttpCode(200)
-  @UseGuards(AuthGuard)
-  @UseGuards(RolesGuard)
-  async getById(@Query('id') id: string) {
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(UserRole.admin, UserRole.consumer)
+  async getById(@Param('id') id: string) {
+    console.log('getById called');
     let user = await this.cacheService.get(`user-${id}`);
-    if (user) return user;
-    user = await this.usersService.findById(id);
+    if (user) return console.log('returning from cache'), user;
+    console.log(id);
+    try {
+      user = await this.usersService.findById(id);
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException('Invalid user id');
+    }
     if (!user) throw new NotFoundException(`User with id: ${id} not found`);
     await this.cacheService.set(`user-${id}`, user);
-    return { user: user };
+    return { user: user, paramId: id };
   }
 
   // Get single user by email
   @Get('/')
   @HttpCode(200)
-  @UseGuards(AuthGuard)
-  @UseGuards(RolesGuard)
-  async getByEmail(@Query('email') email: string) {
-    let user = await this.cacheService.get(`user-${email}`);
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(UserRole.admin, UserRole.vendor)
+  async getByEmail(@Query() queryData: getUserByEmailDto) {
+    let user = await this.cacheService.get(`user-${queryData.email}`);
     if (user) return user;
-    user = await this.usersService.findByEmail(email);
-    if (!user) throw new NotFoundException(`User with id: ${email} not found`);
-    await this.cacheService.set(`user-${email}`, user);
-    return { user: user };
+    user = await this.usersService.findByEmail(queryData.email);
+    if (!user)
+      throw new NotFoundException(
+        `User with Email: ${queryData.email} not found`,
+      );
+    await this.cacheService.set(`user-${queryData.email}`, user);
+    return { user: user, givenEmail: queryData.email };
   }
 
   // Create a new user
   @Post('/create-user')
   @HttpCode(201)
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(UserRole.admin)
   async createUser(@Body() CreateUserDto: CreateUserDto) {
     const user = await this.usersService.findByEmail(CreateUserDto.email);
     if (user) throw new BadRequestException('Email already exists');

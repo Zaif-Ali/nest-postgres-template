@@ -8,10 +8,12 @@ import { envConfiguration } from './config/configuration';
 import { UsersModule } from './modules/users/users.module';
 import { QueuesModule } from './queues/queues.module';
 import { DatabaseModule } from './database/database.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
     UsersModule,
+    AuthModule,
     ConfigModule.forRoot({
       envFilePath: `${process.cwd()}/config/env/.env.${process.env.NODE_ENV}`,
       load: [envConfiguration],

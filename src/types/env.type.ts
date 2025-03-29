@@ -2,6 +2,11 @@ export type envT = {
   NODE_ENV: string;
   PORT: number;
   APPLICATION_NAME: string;
+  // JWT config
+  JWT_SECRET_KEY: string;
+  JWT_EXPIRATION_TIME: string;
+  JWT_REFRESH_SECRET_KEY: string;
+  JWT_REFRESH_EXPIRATION_TIME: string;
   // Postgres config
   POSTGRES_HOST: string;
   POSTGRES_PORT: number;

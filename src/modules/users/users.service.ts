@@ -13,12 +13,11 @@ export class UsersService {
   ) {}
 
   get() {
-    this.logger.log('Getting all users');
     return this.userRepository.find();
   }
 
   findById(id: string) {
-    return this.userRepository.findOne({ where: { userId: id } });
+    return this.userRepository.findOne({ where: { id } });
   }
 
   findByEmail(email: string) {
@@ -26,7 +25,6 @@ export class UsersService {
   }
 
   create(userDTO: CreateUserDto) {
-    this.logger.log(`Creating user: ${userDTO.name}`);
     const user = this.userRepository.create(userDTO);
     return this.userRepository.save(user);
   }
